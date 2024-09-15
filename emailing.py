@@ -18,6 +18,7 @@ def get_image_subtype(image_path):
 
 
 def send_email(image_path):
+    # print("send_email function started")
     email_message = EmailMessage()
     email_message["Subject"] = "New customer showed up!"
     email_message.set_content("Hey, we just saw a new customer!")
@@ -25,13 +26,13 @@ def send_email(image_path):
     with open(image_path, "rb") as file:
         content = file.read()
     image_subtype = get_image_subtype(image_path)
-    email_message.add_attachment(content, maintype="image", subtype=image_subtype)
+    email_message.add_attachment(content, maintype="images", subtype=image_subtype)
 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as gmail:
             gmail.login(SENDER, PASSWORD)
             gmail.sendmail(SENDER, RECEIVER, email_message.as_string())
-        print("Email sent successfully!")
+        # print("Email sent successfully!")
     except smtplib.SMTPException as e:
         print(f"SMTP error occurred: {e}")
     except Exception as e:
