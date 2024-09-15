@@ -1,2 +1,4 @@
 .venv
 .idea
+.env
+timed_camera-P.py

@@ -5,6 +5,7 @@ import os
 from emailing import send_email
 from threading import Thread
 
+# Initialize video capture
 video = cv2.VideoCapture(0)
 time.sleep(1)
 
@@ -14,31 +15,33 @@ count = 1
 
 
 def clean_folder():
-    # print("clear_folder function started")
+    """Remove all PNG images from the images folder"""
     images = glob.glob("images/*.png")
     for image in images:
         os.remove(image)
-    # print("clear_folder function ended")
 
 
 while True:
-
     status = 0
 
+    # Capture frame-by-frame
     check, frame = video.read()
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray_frame_gau = cv2.GaussianBlur(gray_frame, (21, 21), 0)
 
+    # Set the first frame
     if first_frame is None:
         first_frame = gray_frame_gau
 
+    # Compute difference between first frame and current frame
     delta_frame = cv2.absdiff(first_frame, gray_frame_gau)
 
+    # Threshold the delta frame
     thresh_frame = cv2.threshold(delta_frame, 60, 255, cv2.THRESH_BINARY)[1]
     dil_frame = cv2.dilate(thresh_frame, None, iterations=2)
-    # cv2.imshow("My video", dil_frame)
 
-    contours, check = cv2.findContours(dil_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Find contours
+    contours, _ = cv2.findContours(dil_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
         if cv2.contourArea(contour) < 10000:
@@ -48,7 +51,7 @@ while True:
         if rectangle.any():
             status = 1
             cv2.imwrite(f"images/{count}.png", frame)
-            count = count + 1
+            count += 1
 
             all_images = glob.glob("images/*.png")
             index = int(len(all_images) / 2)
@@ -57,16 +60,15 @@ while True:
     status_list.append(status)
     status_list = status_list[-2:]
 
+    # Check if an object has left the frame
     if status_list[0] == 1 and status_list[1] == 0:
-        email_thread = Thread(target=send_email, args=(image_with_object, ))
+        email_thread = Thread(target=send_email, args=(image_with_object,))
         email_thread.daemon = True
 
         clean_thread = Thread(target=clean_folder)
         clean_thread.daemon = True
 
         email_thread.start()
-
-    # print(status_list)
 
     cv2.imshow("video", frame)
     key = cv2.waitKey(1)
